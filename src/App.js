@@ -1,14 +1,3 @@
-// import React from 'react';
-
-// function App() {
-//   return (
-//     <div>
-//       <h1>Welcome to Walkable!</h1>
-//     </div>
-//   );
-// }
-
-// export default App;
 import React, { useState } from 'react';
 import { Container, Typography, Box } from '@mui/material';
 import TimeSelection from './TimeSelection';

@@ -12,8 +12,11 @@ import Button from '@mui/joy/Button';
  * This hook initializes the start time based on the current time or defaults
  * to 7 AM if the current time is invalid. It also sets a fixed end time.
  *
- * @returns {Object} An object containing the startTime, setStartTime,
- * endTime, and setEndTime.
+ * @returns {Object} An object containing:
+ * @returns {dayjs.Dayjs|null} startTime - The current value of the start time.
+ * @returns {function} setStartTime - A state setter function to update the start time.
+ * @returns {dayjs.Dayjs} endTime - The current value of the end time.
+ * @returns {function} setEndTime - A state setter function to update the end time.
  */
 const useTimeSettings = () => {
   const [startTime, setStartTime] = useState(null);

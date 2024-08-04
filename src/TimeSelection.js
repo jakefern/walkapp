@@ -6,30 +6,45 @@ import { TimeField } from '@mui/x-date-pickers/TimeField';
 import { Box } from '@mui/material';
 import Button from '@mui/joy/Button';
 
-// This is a large function that styles and takes the date inputs, and styles a button to generate the user's day.
-
-function TimeSelection() {
+/**
+ * useTimeSettings - Custom hook to manage time settings for the application.
+ *
+ * This hook initializes the start time based on the current time or defaults
+ * to 7 AM if the current time is invalid. It also sets a fixed end time.
+ *
+ * @returns {Object} An object containing the startTime, setStartTime,
+ * endTime, and setEndTime.
+ */
+const useTimeSettings = () => {
   const [startTime, setStartTime] = useState(null);
   const [endTime, setEndTime] = useState(dayjs('2022-04-17T18:30'));
 
   useEffect(() => {
-    // Get the current time
     const now = new Date();
-    
-    // If the current time is valid, set it as the start time
     if (!isNaN(now.getTime())) {
       setStartTime(dayjs(now));
     } else {
-      // If the current time is not valid, set default to 7 AM
       const defaultTime = dayjs().hour(7).minute(0);
       setStartTime(defaultTime);
     }
   }, []);
 
-  const handleGenerateRoute = () => {
-    console.log('Generating route with:', startTime, endTime);
-    // Add your route generation logic here
-  };
+  return { startTime, setStartTime, endTime, setEndTime };
+};
+
+/**
+ * TimeSelection - Component that renders a UI for selecting start and end times
+ * and provides a button to generate a route based on these times.
+ *
+ * This component uses the `useTimeSettings` hook to manage the state of the
+ * start and end times. It displays two `TimeField` components for the user to
+ * select the times and a `Button` to initiate route generation.
+ *
+ * @returns {JSX.Element} A JSX element containing the time selection UI.
+ */
+const TimeSelection = () => {
+  const { startTime, setStartTime, endTime, setEndTime } = useTimeSettings();
+  console.log('Generating route with:', startTime, endTime);
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -44,12 +59,12 @@ function TimeSelection() {
           value={endTime}
           onChange={(newValue) => setEndTime(newValue)}
         />
-         <Button color="success" onClick={handleGenerateRoute} variant="solid" size="lg">
+        <Button color="success" variant="solid" size="lg"> 
           Start My Day
         </Button>
       </Box>
     </LocalizationProvider>
   );
-}
+};
 
 export default TimeSelection;

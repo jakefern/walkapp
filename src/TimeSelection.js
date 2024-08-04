@@ -5,6 +5,7 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { TimeField } from '@mui/x-date-pickers/TimeField';
 import { Box } from '@mui/material';
 import Button from '@mui/joy/Button';
+import TextField from '@mui/material/TextField';
 
 /**
  * useTimeSettings - Custom hook to manage time settings for the application.
@@ -48,6 +49,8 @@ const useTimeSettings = () => {
 const TimeSelection = () => {
   const { startTime, setStartTime, endTime, setEndTime } = useTimeSettings();
   console.log('Generating route with:', startTime, endTime);
+  const [walkingTime, setWalkingTime] = useState('');
+  const [walkingDistance, setWalkingDistance] = useState('');
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -61,6 +64,18 @@ const TimeSelection = () => {
           label="When you want to end your day"
           value={endTime}
           onChange={(newValue) => setEndTime(newValue)}
+        />
+         <TextField
+          label="Total walking time (minutes/hours)"
+          value={walkingTime}
+          onChange={(e) => setWalkingTime(e.target.value)}
+          fullWidth
+        />
+        <TextField
+          label="Total walking distance (miles)"
+          value={walkingDistance}
+          onChange={(e) => setWalkingDistance(e.target.value)}
+          fullWidth
         />
         <Button color="success" variant="solid" size="lg"> 
           Start My Day

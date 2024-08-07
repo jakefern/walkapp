@@ -6,6 +6,7 @@ import { TimeField } from '@mui/x-date-pickers/TimeField';
 import { Box } from '@mui/material';
 import Button from '@mui/joy/Button';
 import TextField from '@mui/material/TextField';
+import RestaurantSearch from './RestaurantSearch';
 
 /**
  * useTimeSettings - Custom hook to manage time settings for the application.
@@ -50,6 +51,11 @@ const TimeSelection = () => {
   const { startTime, setStartTime, endTime, setEndTime } = useTimeSettings();
   console.log('Generating route with:', startTime, endTime);
   const [walkingDistance, setWalkingDistance] = useState('');
+  const [showResults, setShowResults] = useState(false);
+
+  const handleStartDay = () => {
+    setShowResults(true);
+  };
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -70,9 +76,15 @@ const TimeSelection = () => {
           onChange={(e) => setWalkingDistance(e.target.value)}
           fullWidth
         />
-        <Button color="success" variant="solid" size="lg"> 
+        <Button color="success" variant="solid" size="lg" onClick={handleStartDay}>
           Start My Day
         </Button>
+        {showResults && (
+          <RestaurantSearch
+            location="34.052235,-118.243683"
+            walkingDistance={walkingDistance}
+          />
+        )}
       </Box>
     </LocalizationProvider>
   );

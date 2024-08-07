@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Container, Typography, Box } from '@mui/material';
-import TimeSelection from './TimeSelection';
-import LocationInput from './LocationInput';
-import Header from './Header';
+import TimeSelection from './components/TimeSelection';
+import LocationInput from './components/LocationInput';
+import Header from './components/Header';
+import RestaurantSearch from './components/RestaurantSearch';
 
 /**
  * App - Main component that renders the application.

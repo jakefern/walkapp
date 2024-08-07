@@ -22,7 +22,7 @@ const useLocation = () => {
   const [location, setLocation] = useState('');
   const autocompleteRef = useRef(null);
   const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: 'AIzaSyDFy4M912mf6iKUKwOUrcC7n3Qv9jtlrKU', // API Key
+    googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
     libraries,
   });
 

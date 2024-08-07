@@ -2,6 +2,10 @@
 const express = require('express');
 const axios = require('axios');
 
+// Load environment variables from .env file
+require('dotenv').config();
+console.log("Google Maps API Key:", process.env.REACT_APP_GOOGLE_MAPS_API_KEY);
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 

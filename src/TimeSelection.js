@@ -49,7 +49,6 @@ const useTimeSettings = () => {
 const TimeSelection = () => {
   const { startTime, setStartTime, endTime, setEndTime } = useTimeSettings();
   console.log('Generating route with:', startTime, endTime);
-  const [walkingTime, setWalkingTime] = useState('');
   const [walkingDistance, setWalkingDistance] = useState('');
 
   return (
@@ -64,12 +63,6 @@ const TimeSelection = () => {
           label="When you want to end your day"
           value={endTime}
           onChange={(newValue) => setEndTime(newValue)}
-        />
-         <TextField
-          label="Total walking time (minutes/hours)"
-          value={walkingTime}
-          onChange={(e) => setWalkingTime(e.target.value)}
-          fullWidth
         />
         <TextField
           label="Total walking distance (miles)"

@@ -6,7 +6,6 @@ import { TimeField } from '@mui/x-date-pickers/TimeField';
 import { Box } from '@mui/material';
 import Button from '@mui/joy/Button';
 import TextField from '@mui/material/TextField';
-import RestaurantSearch from './RestaurantSearch';
 
 /**
  * useTimeSettings - Custom hook to manage time settings for the application.
@@ -39,22 +38,20 @@ const useTimeSettings = () => {
 
 /**
  * TimeSelection - Component that renders a UI for selecting start and end times
- * and provides a button to generate a route based on these times.
+ * and allows the user to input the walking distance.
  *
- * This component uses the `useTimeSettings` hook to manage the state of the
- * start and end times. It displays two `TimeField` components for the user to
- * select the times and a `Button` to initiate route generation.
+ * @param {function} setWalkingDistance - Function to update the walking distance in the parent component.
+ * @param {function} onGenerateRoute - Function to trigger route generation in the parent component.
  *
  * @returns {JSX.Element} A JSX element containing the time selection UI.
  */
-const TimeSelection = () => {
+const TimeSelection = ({ setWalkingDistance, onGenerateRoute }) => {
   const { startTime, setStartTime, endTime, setEndTime } = useTimeSettings();
-  console.log('Generating route with:', startTime, endTime);
-  const [walkingDistance, setWalkingDistance] = useState('');
-  const [showResults, setShowResults] = useState(false);
+  const [distanceInput, setDistanceInput] = useState('');
 
   const handleStartDay = () => {
-    setShowResults(true);
+    setWalkingDistance(distanceInput);
+    onGenerateRoute(); // Notify parent component to generate the route
   };
 
   return (
@@ -72,19 +69,13 @@ const TimeSelection = () => {
         />
         <TextField
           label="Total walking distance (miles)"
-          value={walkingDistance}
-          onChange={(e) => setWalkingDistance(e.target.value)}
+          value={distanceInput}
+          onChange={(e) => setDistanceInput(e.target.value)}
           fullWidth
         />
         <Button color="success" variant="solid" size="lg" onClick={handleStartDay}>
           Start My Day
         </Button>
-        {showResults && (
-          <RestaurantSearch
-            location="34.052235,-118.243683" // switch to dynamic location input, LocationInput.js
-            walkingDistance={walkingDistance}
-          />
-        )}
       </Box>
     </LocalizationProvider>
   );

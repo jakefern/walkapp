@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import { Container, Typography, Box } from '@mui/material';
-import TimeSelection from './components/TimeSelection';
-import LocationInput from './components/LocationInput';
 import Header from './components/Header';
-import RestaurantSearch from './components/RestaurantSearch';
+import ItineraryPlanner from './components/ItineraryPlanner';
 
 /**
  * App - Main component that renders the application.
@@ -14,8 +12,7 @@ function App() {
   return (
     <Container>
       <Header />
-      <LocationInput />
-      <TimeSelection />
+      <ItineraryPlanner />
     </Container>
   );
 }

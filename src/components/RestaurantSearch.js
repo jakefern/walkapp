@@ -15,6 +15,7 @@ const RestaurantSearch = ({ location, walkingDistance }) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    // console.log("Using location:", location); // Debugging line
     const fetchRestaurants = async () => {
       setLoading(true);
       setError(null);

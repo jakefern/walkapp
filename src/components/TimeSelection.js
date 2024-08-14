@@ -81,7 +81,7 @@ const TimeSelection = () => {
         </Button>
         {showResults && (
           <RestaurantSearch
-            location="34.052235,-118.243683"
+            location="34.052235,-118.243683" // switch to dynamic location input, LocationInput.js
             walkingDistance={walkingDistance}
           />
         )}

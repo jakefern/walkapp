@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import RestaurantDisplay from './RestaurantDisplay';
 
 /**
  * RestaurantSearch - Component that fetches and displays restaurant locations based on the given location and walking distance.
@@ -40,11 +41,7 @@ const RestaurantSearch = ({ location, walkingDistance }) => {
       {restaurants.length > 0 ? (
         <ul>
           {restaurants.map((restaurant) => (
-            <li key={restaurant.place_id}>
-              <h3>{restaurant.name}</h3>
-              <p>{restaurant.vicinity}</p>
-              <p>Rating: {restaurant.rating}</p>
-            </li>
+            <RestaurantDisplay key={restaurant.place_id} restaurant={restaurant} />
           ))}
         </ul>
       ) : (

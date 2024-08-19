@@ -19,6 +19,15 @@ app.get('/', (req, res) => {
   res.send('Walkable Itinerary Backend');
 });
 
+const types = [
+  "night_club",
+  "bar",
+  "restaurant",
+  "food",
+  "point_of_interest",
+  "establishment"
+].join('|')
+
 /**
  * Endpoint to fetch restaurant locations using Google API.
  * @route POST /api/restaurants
@@ -36,7 +45,7 @@ app.post('/api/restaurants', async (req, res) => {
       params: {
         location: location,
         radius: radius,
-        type: 'restaurant',
+        type: types,
         key: apiKey
       }
     });

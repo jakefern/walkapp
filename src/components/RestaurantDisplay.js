@@ -13,9 +13,12 @@ import PropTypes from 'prop-types';
 const RestaurantDisplay = ({ restaurant }) => {
   return (
     <li>
+      {/* <img src={restaurant.icon} /> */}
       <h3>{restaurant.name}</h3>
+      <h4>TYPE = {restaurant.types}</h4>
       <p>{restaurant.vicinity}</p>
-      <p>Rating: {restaurant.rating}</p>
+      <p>Rating: {restaurant.rating} ({restaurant.user_ratings_total})</p>
+      <p>{restaurant.price_level}</p>
     </li>
   );
 };

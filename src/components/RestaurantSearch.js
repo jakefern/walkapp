@@ -15,7 +15,7 @@ const RestaurantSearch = ({ location, walkingDistance }) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // console.log("Using location:", location); // Debugging line
+    // console.log("Using location:", location); // Debugging line 
     const fetchRestaurants = async () => {
       setLoading(true);
       setError(null);
@@ -33,7 +33,7 @@ const RestaurantSearch = ({ location, walkingDistance }) => {
       fetchRestaurants();
     }
   }, [location, walkingDistance]);
-
+  console.log(restaurants)
   return (
     <div>
       <h2>Results</h2>

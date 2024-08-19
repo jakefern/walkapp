@@ -11,6 +11,7 @@ import PropTypes from 'prop-types';
  * @returns {JSX.Element} A JSX element displaying the restaurant's details.
  */
 const RestaurantDisplay = ({ restaurant }) => {
+  // console.log(restaurant)
   return (
     <li>
       {/* <img src={restaurant.icon} /> */}
@@ -19,6 +20,7 @@ const RestaurantDisplay = ({ restaurant }) => {
       <p>{restaurant.vicinity}</p>
       <p>Rating: {restaurant.rating} ({restaurant.user_ratings_total})</p>
       <p>{restaurant.price_level}</p>
+      <p>Walking Distance: {restaurant.distance}</p>
     </li>
   );
 };

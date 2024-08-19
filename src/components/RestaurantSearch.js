@@ -22,27 +22,29 @@ const RestaurantSearch = ({ location, walkingDistance }) => {
       const radius = walkingDistance * 1609.34; // Convert miles to meters
       try {
         const response = await axios.post('http://localhost:3001/api/restaurants', { location, radius });
-        setRestaurants(response.data.results);
+        setRestaurants(response.data.restaurants || []);
+        console.log(response.data)
       } catch (err) {
         setError('Failed to fetch restaurants');
+        setRestaurants([]);
       }
       setLoading(false);
     };
 
-    if (walkingDistance) {
+    if (location && walkingDistance) {
       fetchRestaurants();
     }
   }, [location, walkingDistance]);
-  console.log(restaurants)
+  // console.log(restaurants)
   return (
     <div>
-      <h2>Results</h2>
+      <h2>Restaurants and Walking Distances</h2>
       {loading && <p>Loading...</p>}
       {error && <p>{error}</p>}
       {restaurants.length > 0 ? (
         <ul>
-          {restaurants.map((restaurant) => (
-            <RestaurantDisplay key={restaurant.place_id} restaurant={restaurant} />
+          {restaurants.map((restaurant, index) => (
+            <RestaurantDisplay key={index} restaurant={restaurant} />
           ))}
         </ul>
       ) : (

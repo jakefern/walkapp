@@ -41,7 +41,7 @@ app.post('/api/restaurants', async (req, res) => {
 
   try {
     // Make a request to the Google Places API to get nearby restaurants
-    const response = await axios.get(`https://maps.googleapis.com/maps/api/place/nearbysearch/json`, {
+    const placesResponse = await axios.get(`https://maps.googleapis.com/maps/api/place/nearbysearch/json`, {
       params: {
         location: location,
         radius: radius,
@@ -50,12 +50,40 @@ app.post('/api/restaurants', async (req, res) => {
       }
     });
 
-    // Send the response data back to the client
-    res.json(response.data);
+    const places = placesResponse.data.results;
+
+    if (places.length === 0) {
+      return res.json({ restaurants: [] });
+    }
+
+    // Step 2: Get the coordinates of all restaurants
+    const destinations = places.map(place => `${place.geometry.location.lat},${place.geometry.location.lng}`).join('|');
+
+    // Step 3: Use Distance Matrix API to calculate walking distances
+    const distanceMatrixResponse = await axios.get(`https://maps.googleapis.com/maps/api/distancematrix/json`, {
+      params: {
+        origins: location, // Starting location
+        destinations: destinations, // All restaurant locations
+        mode: 'walking', // Calculate walking distance
+        key: apiKey,
+      },
+    });
+
+    const distances = distanceMatrixResponse.data.rows[0].elements;
+
+    // Step 4: Combine the places with their respective distances
+    const restaurantsWithDistances = places.map((place, index) => ({
+      ...place,
+      distance: distances[index].distance.text, // Add the distance text (e.g., "1.2 km")
+      distanceValue: distances[index].distance.value, // Add the distance value (in meters) for sorting or further calculations
+    }));
+    
+    console.log(restaurantsWithDistances)
+
+    res.json({ restaurants: restaurantsWithDistances });
   } catch (error) {
-    // Log the error and send an error response to the client
-    console.error('Error fetching restaurants:', error);
-    res.status(500).json({ error: 'Failed to fetch restaurants' });
+    console.error('Error fetching places or distances:', error);
+    res.status(500).json({ error: 'Failed to fetch places or distances' });
   }
 });
 

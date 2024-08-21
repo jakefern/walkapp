@@ -3,7 +3,8 @@ import axios from 'axios';
 import RestaurantDisplay from './RestaurantDisplay';
 
 /**
- * RestaurantSearch - Component that fetches and displays restaurant locations based on the given location and walking distance.
+ * RestaurantSearch - Component that fetches and displays a route with multiple places
+ * that maximizes the total walking distance based on user input.
  *
  * @param {string} location - The latitude and longitude of the starting location in the format "lat,lng".
  * @param {number} walkingDistance - The total walking distance in miles.
@@ -15,30 +16,30 @@ const RestaurantSearch = ({ location, walkingDistance }) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // console.log("Using location:", location); // Debugging line 
-    const fetchRestaurants = async () => {
+    const fetchRoute = async () => {
       setLoading(true);
       setError(null);
-      const radius = walkingDistance * 1609.34; // Convert miles to meters
+
       try {
-        const response = await axios.post('http://localhost:3001/api/restaurants', { location, radius });
-        setRestaurants(response.data.restaurants || []);
-        console.log(response.data)
+        const response = await axios.post('http://localhost:3001/api/generateRoute', { location, totalDistance: walkingDistance });
+        setRestaurants(response.data.route || []); // Assuming the route array is returned in `response.data.route`
+        console.log("Generated route:", response.data.route); // Debugging line
       } catch (err) {
-        setError('Failed to fetch restaurants');
+        setError('Failed to generate route');
         setRestaurants([]);
       }
+
       setLoading(false);
     };
 
     if (location && walkingDistance) {
-      fetchRestaurants();
+      fetchRoute();
     }
   }, [location, walkingDistance]);
-  // console.log(restaurants)
+
   return (
     <div>
-      <h2>Restaurants and Walking Distances</h2>
+      <h2>Generated Route</h2>
       {loading && <p>Loading...</p>}
       {error && <p>{error}</p>}
       {restaurants.length > 0 ? (
@@ -48,7 +49,7 @@ const RestaurantSearch = ({ location, walkingDistance }) => {
           ))}
         </ul>
       ) : (
-        !loading && <p>No restaurants found</p>
+        !loading && <p>No places found</p>
       )}
     </div>
   );

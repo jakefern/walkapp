@@ -29,61 +29,118 @@ const types = [
 ].join('|')
 
 /**
- * Endpoint to fetch restaurant locations using Google API.
- * @route POST /api/restaurants
+ * Endpoint to generate a walking route with multiple places, based on the total walking distance.
+ * This endpoint dynamically calculates the walking distance between consecutive places to ensure
+ * the total distance matches the user's input.
+ * @route POST /api/generateRoute
  * @param {string} location - The latitude and longitude of the starting location in the format "lat,lng".
- * @param {number} radius - The radius within which to search for restaurants, in meters.
- * @returns {object} - A JSON object containing the restaurant data from the Google Places API.
+ * @param {number} totalDistance - The total walking distance in miles.
+ * @returns {object} - A JSON object containing the route data with multiple places.
  */
-app.post('/api/restaurants', async (req, res) => {
-  const { location, radius } = req.body; // Extract location and radius from the request body
+app.post('/api/generateRoute', async (req, res) => {
+  const { location, totalDistance } = req.body; // Extract location and totalDistance from the request body
   const apiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY; // Get the API key from environment variables
 
+  let remainingDistance = totalDistance * 1609.34; // Convert miles to meters
+  let currentLocation = location;
+  let route = [];
+  let selectedPlaceIds = new Set(); // Track selected places to prevent duplicates
+
   try {
-    // Make a request to the Google Places API to get nearby restaurants
-    const placesResponse = await axios.get(`https://maps.googleapis.com/maps/api/place/nearbysearch/json`, {
-      params: {
-        location: location,
-        radius: radius,
-        type: types,
-        key: apiKey
+    while (remainingDistance > 0) {
+      const placesResponse = await axios.get(`https://maps.googleapis.com/maps/api/place/nearbysearch/json`, {
+        params: {
+          location: currentLocation,
+          radius: Math.min(remainingDistance, 5000), // Radius in meters
+          type: types,
+          key: apiKey,
+        },
+      });
+
+      const places = placesResponse.data.results;
+
+      if (!places || places.length === 0) {
+        console.error('No places found or response is invalid');
+        break;
       }
-    });
 
-    const places = placesResponse.data.results;
+      const destinations = places.map(place => `${place.geometry.location.lat},${place.geometry.location.lng}`).join('|');
 
-    if (places.length === 0) {
-      return res.json({ restaurants: [] });
+      const distanceMatrixResponse = await axios.get(`https://maps.googleapis.com/maps/api/distancematrix/json`, {
+        params: {
+          origins: currentLocation,
+          destinations: destinations,
+          mode: 'walking',
+          key: apiKey,
+        },
+      });
+
+      console.log("Distance Matrix Response:", distanceMatrixResponse.data);
+
+      if (!distanceMatrixResponse.data.rows || !distanceMatrixResponse.data.rows[0] || !distanceMatrixResponse.data.rows[0].elements) {
+        console.error('Invalid Distance Matrix API response');
+        break;
+      }
+
+      const distances = distanceMatrixResponse.data.rows[0].elements;
+
+      console.log("Distances:", distances);
+      console.log("Remaining Distance (meters):", remainingDistance);
+
+      let selectedPlaceIndex = -1;
+      for (let i = 0; i < distances.length; i++) {
+        const place = places[i];
+        const distanceInMiles = distances[i].distance.value / 1609.34; // Convert distance from meters to miles
+
+        if (
+          distances[i].distance &&
+          distanceInMiles > 0 &&
+          distanceInMiles <= remainingDistance / 1609.34 && // Convert remaining distance to miles for comparison
+          !selectedPlaceIds.has(place.place_id) // Check if the place has already been selected
+        ) {
+          selectedPlaceIndex = i;
+          break;
+        }
+      }
+
+      if (selectedPlaceIndex === -1) {
+        console.error('No suitable place found within the remaining distance');
+        break;
+      }
+
+      const selectedPlace = places[selectedPlaceIndex];
+      const distanceToPlaceInMeters = distances[selectedPlaceIndex].distance.value;
+      const distanceToPlaceInMiles = distanceToPlaceInMeters / 1609.34; // Convert distance to miles
+
+      // Reduce remaining distance by the distance to the selected place (in meters)
+      remainingDistance -= distanceToPlaceInMeters;
+
+      console.log("Selected Place:", selectedPlace.name);
+      console.log("Distance to Place (miles):", distanceToPlaceInMiles);
+      console.log("New Remaining Distance (miles):", remainingDistance / 1609.34);
+
+      // Add the selected place to the route and mark it as selected
+      route.push({
+        ...selectedPlace,
+        distance: `${distanceToPlaceInMiles.toFixed(2)} miles`, // Store the distance in miles, formatted to 2 decimal places
+        distanceValue: distanceToPlaceInMiles, // Store the distance value in miles for further use
+      });
+
+      selectedPlaceIds.add(selectedPlace.place_id); // Track the selected place to avoid duplicates
+
+      currentLocation = `${selectedPlace.geometry.location.lat},${selectedPlace.geometry.location.lng}`;
     }
 
-    // Step 2: Get the coordinates of all restaurants
-    const destinations = places.map(place => `${place.geometry.location.lat},${place.geometry.location.lng}`).join('|');
+    if (route.length === 0) {
+      console.error('Route generation failed; no places were added to the route');
+      res.status(500).json({ error: 'Failed to generate route' });
+      return;
+    }
 
-    // Step 3: Use Distance Matrix API to calculate walking distances
-    const distanceMatrixResponse = await axios.get(`https://maps.googleapis.com/maps/api/distancematrix/json`, {
-      params: {
-        origins: location, // Starting location
-        destinations: destinations, // All restaurant locations
-        mode: 'walking', // Calculate walking distance
-        key: apiKey,
-      },
-    });
-
-    const distances = distanceMatrixResponse.data.rows[0].elements;
-
-    // Step 4: Combine the places with their respective distances
-    const restaurantsWithDistances = places.map((place, index) => ({
-      ...place,
-      distance: distances[index].distance.text, // Add the distance text (e.g., "1.2 km")
-      distanceValue: distances[index].distance.value, // Add the distance value (in meters) for sorting or further calculations
-    }));
-    
-    console.log(restaurantsWithDistances)
-
-    res.json({ restaurants: restaurantsWithDistances });
+    res.json({ route });
   } catch (error) {
-    console.error('Error fetching places or distances:', error);
-    res.status(500).json({ error: 'Failed to fetch places or distances' });
+    console.error('Error generating route:', error);
+    res.status(500).json({ error: 'Failed to generate route' });
   }
 });
 

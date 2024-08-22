@@ -14,6 +14,53 @@ app.use(cors());
 // Middleware to parse JSON bodies
 app.use(express.json());
 
+// In-memory cache for API responses
+const cache = {};
+
+// Track API request count within a given time period
+let requestCount = 0;
+const maxRequestsPerMinute = 60;
+
+// Reset the request count every minute
+setInterval(() => {
+  requestCount = 0;
+}, 60000); // 60,000ms = 1 minute
+
+/**
+ * Fetch data from a URL with caching.
+ * 
+ * @param {string} url - The URL to fetch data from.
+ * @param {object} params - The parameters for the API request.
+ * @returns {Promise<object>} - The API response data.
+ */
+const fetchWithCache = async (url, params) => {
+  const cacheKey = `${url}_${JSON.stringify(params)}`;
+
+  if (cache[cacheKey]) {
+    console.log(`Cache hit for ${cacheKey}`);
+    return cache[cacheKey];
+  }
+
+  if (requestCount >= maxRequestsPerMinute) {
+    throw new Error('Max requests per minute reached');
+  }
+
+  try {
+    console.log(`Fetching data for ${cacheKey}`);
+    requestCount++;
+    const response = await axios.get(url, { params });
+    cache[cacheKey] = response.data; // Store in cache
+
+     // Log the response for debugging
+    //  console.log(`API Response for ${cacheKey}:`, JSON.stringify(response.data, null, 2));
+
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching data:', error.message);
+    throw error;
+  }
+};
+
 // Basic route to test the server
 app.get('/', (req, res) => {
   res.send('Walkable Itinerary Backend');
@@ -38,26 +85,27 @@ const types = [
  * @returns {object} - A JSON object containing the route data with multiple places.
  */
 app.post('/api/generateRoute', async (req, res) => {
-  const { location, totalDistance } = req.body; // Extract location and totalDistance from the request body
-  const apiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY; // Get the API key from environment variables
+  const { location, totalDistance } = req.body;
+  const apiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
 
   let remainingDistance = totalDistance * 1609.34; // Convert miles to meters
   let currentLocation = location;
   let route = [];
-  let selectedPlaceIds = new Set(); // Track selected places to prevent duplicates
+  let selectedPlaceIds = new Set();
 
   try {
     while (remainingDistance > 0) {
-      const placesResponse = await axios.get(`https://maps.googleapis.com/maps/api/place/nearbysearch/json`, {
-        params: {
+      const placesResponse = await fetchWithCache(
+        'https://maps.googleapis.com/maps/api/place/nearbysearch/json',
+        {
           location: currentLocation,
-          radius: Math.min(remainingDistance, 5000), // Radius in meters
+          radius: Math.min(remainingDistance, 5000),
           type: types,
           key: apiKey,
-        },
-      });
+        }
+      );
 
-      const places = placesResponse.data.results;
+      const places = placesResponse.results;
 
       if (!places || places.length === 0) {
         console.error('No places found or response is invalid');
@@ -66,26 +114,26 @@ app.post('/api/generateRoute', async (req, res) => {
 
       const destinations = places.map(place => `${place.geometry.location.lat},${place.geometry.location.lng}`).join('|');
 
-      const distanceMatrixResponse = await axios.get(`https://maps.googleapis.com/maps/api/distancematrix/json`, {
-        params: {
+      const distanceMatrixResponse = await fetchWithCache(
+        'https://maps.googleapis.com/maps/api/distancematrix/json',
+        {
           origins: currentLocation,
           destinations: destinations,
           mode: 'walking',
           key: apiKey,
-        },
-      });
+        }
+      );
 
-      console.log("Distance Matrix Response:", distanceMatrixResponse.data);
+      // Log the entire response for debugging purposes
+      console.log("Distance Matrix Response:", JSON.stringify(distanceMatrixResponse, null, 2));
 
-      if (!distanceMatrixResponse.data.rows || !distanceMatrixResponse.data.rows[0] || !distanceMatrixResponse.data.rows[0].elements) {
-        console.error('Invalid Distance Matrix API response');
+      // Check if the 'rows' property exists and contains the expected data
+      if (!distanceMatrixResponse || !distanceMatrixResponse.rows || !Array.isArray(distanceMatrixResponse.rows) || distanceMatrixResponse.rows.length === 0 || !distanceMatrixResponse.rows[0].elements) {
+        console.error('Invalid or unexpected Distance Matrix API response');
         break;
       }
 
-      const distances = distanceMatrixResponse.data.rows[0].elements;
-
-      console.log("Distances:", distances);
-      console.log("Remaining Distance (meters):", remainingDistance);
+      const distances = distanceMatrixResponse.rows[0].elements;
 
       let selectedPlaceIndex = -1;
       for (let i = 0; i < distances.length; i++) {
@@ -95,8 +143,8 @@ app.post('/api/generateRoute', async (req, res) => {
         if (
           distances[i].distance &&
           distanceInMiles > 0 &&
-          distanceInMiles <= remainingDistance / 1609.34 && // Convert remaining distance to miles for comparison
-          !selectedPlaceIds.has(place.place_id) // Check if the place has already been selected
+          distanceInMiles <= remainingDistance / 1609.34 &&
+          !selectedPlaceIds.has(place.place_id)
         ) {
           selectedPlaceIndex = i;
           break;
@@ -112,14 +160,8 @@ app.post('/api/generateRoute', async (req, res) => {
       const distanceToPlaceInMeters = distances[selectedPlaceIndex].distance.value;
       const distanceToPlaceInMiles = distanceToPlaceInMeters / 1609.34; // Convert distance to miles
 
-      // Reduce remaining distance by the distance to the selected place (in meters)
       remainingDistance -= distanceToPlaceInMeters;
 
-      console.log("Selected Place:", selectedPlace.name);
-      console.log("Distance to Place (miles):", distanceToPlaceInMiles);
-      console.log("New Remaining Distance (miles):", remainingDistance / 1609.34);
-
-      // Add the selected place to the route and mark it as selected
       route.push({
         ...selectedPlace,
         distance: `${distanceToPlaceInMiles.toFixed(2)} miles`, // Store the distance in miles, formatted to 2 decimal places

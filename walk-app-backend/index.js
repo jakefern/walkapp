@@ -5,11 +5,21 @@ const cors = require('cors');
 
 // Load environment variables from .env file
 require('dotenv').config();
-console.log("Environment Variables: ", process.env);
+// console.log("Environment Variables: ", process.env);
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 app.use(cors());
+
+
+// Load the local data from a JSON file
+const localPlaces = require('./placesWithDetails.json');
+console.log("Local places size: ", localPlaces.length)
+
+// Configuration: Toggle between local and external API use
+const useLocalData = process.env.USE_LOCAL_DATA === 'true';
+
+console.log(`Using ${useLocalData ? 'local data' : 'Google Maps API'}`);
 
 // Middleware to parse JSON bodies
 app.use(express.json());
@@ -95,17 +105,25 @@ app.post('/api/generateRoute', async (req, res) => {
 
   try {
     while (remainingDistance > 0) {
-      const placesResponse = await fetchWithCache(
-        'https://maps.googleapis.com/maps/api/place/nearbysearch/json',
-        {
-          location: currentLocation,
-          radius: Math.min(remainingDistance, 5000),
-          type: types,
-          key: apiKey,
-        }
-      );
+      let places;
 
-      const places = placesResponse.results;
+      if (useLocalData) {
+        // Use local data
+        console.log('Using local data for places ', localPlaces.length);
+        places = localPlaces;
+      } else {
+        // Use Google Maps API
+        const placesResponse = await fetchWithCache(
+          'https://maps.googleapis.com/maps/api/place/nearbysearch/json',
+          {
+            location: currentLocation,
+            radius: Math.min(remainingDistance, 5000), // Radius in meters
+            type: types,
+            key: apiKey,
+          }
+        );
+        places = placesResponse.results;
+      }
 
       if (!places || places.length === 0) {
         console.error('No places found or response is invalid');
